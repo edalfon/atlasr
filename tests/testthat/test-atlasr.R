@@ -69,7 +69,7 @@ test_that("binning drops empty classes but keeps each class's colour", {
   # pretty breaks 0-20-40-60-80-100: classes 2 and 3 empty
   b <- bin_values(c(5, 10, 70, 90, 95), 5, "pretty", pal)
   expect_true(is.factor(b$class))
-  expect_equal(levels(b$class), c("0 – 20", "60 – 80", "80 – 100"))
+  expect_equal(levels(b$class), c("0 \u2013 20", "60 \u2013 80", "80 \u2013 100"))
   expect_equal(b$colours, c("col1", "col4", "col5"))
   expect_equal(nlevels(b$class), length(b$colours))
 })

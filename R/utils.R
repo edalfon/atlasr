@@ -7,9 +7,19 @@ pad_code <- function(x, width) {
   x
 }
 
-# Join data to the geometries, by department code, keeping every
-# department (those without data get NA)
-join_data <- function(geom, data, join_var, zcol) {
+# Spatial levels: the code column, its width, the name column and how to
+# describe one unit in messages
+level_spec <- function(level) {
+  switch(level,
+    dept = list(code = "dept_cod", width = 2, name = "dept_nom",
+                unit = "department", total = "00")
+  )
+}
+
+# Join data to the geometries, by code, keeping every unit (those without
+# data get NA)
+join_data <- function(geom, data, join_var, zcol, level = "dept") {
+  spec <- level_spec(level)
   data <- as.data.frame(data)
   if (!join_var %in% names(data)) {
     stop("`data` has no column `", join_var, "` (set `join_var`).",
@@ -21,26 +31,27 @@ join_data <- function(geom, data, join_var, zcol) {
          paste(missing_vars, collapse = ", "), call. = FALSE)
   }
 
-  codes <- pad_code(data[[join_var]], 2)
-  # "00" is the national total in DANE tables: not a department, so ignore it
-  data <- data[!codes %in% "00", , drop = FALSE]
-  codes <- codes[!codes %in% "00"]
+  codes <- pad_code(data[[join_var]], spec$width)
+  # the national total in DANE tables ("00") is not a unit, so ignore it
+  is_total <- codes %in% spec$total
+  data <- data[!is_total, , drop = FALSE]
+  codes <- codes[!is_total]
   if (anyDuplicated(codes[!is.na(codes)])) {
-    stop("`data` must have one row per department; duplicated codes: ",
+    stop("`data` must have one row per ", spec$unit, "; duplicated codes: ",
          paste(unique(codes[duplicated(codes) & !is.na(codes)]),
                collapse = ", "),
          call. = FALSE)
   }
-  unmatched <- setdiff(codes, geom$dept_cod)
+  unmatched <- setdiff(codes, geom[[spec$code]])
   if (length(unmatched) > 0) {
-    warning("Codes in `data` that match no department (dropped): ",
+    warning("Codes in `data` that match no ", spec$unit, " (dropped): ",
             paste(unmatched, collapse = ", "), call. = FALSE)
   }
 
   data[[join_var]] <- NULL
   data <- data[setdiff(names(data), names(geom))]
   vars <- names(data)
-  idx <- match(geom$dept_cod, codes)
+  idx <- match(geom[[spec$code]], codes)
   for (v in vars) {
     geom[[v]] <- data[[v]][idx]
   }
@@ -107,19 +118,15 @@ palette_fun <- function(palette) {
 # class that occurs. Colours come from the full palette, so a class keeps its
 # colour even when an empty class is dropped (mapview needs exactly one colour
 # per level present, or it trims the palette and shifts the colours).
-bin_values <- function(x, n, method, col.regions) {
+bin_values <- function(x, n, method, pal) {
   breaks <- get_breaks(x, n, method)
   class <- cut(x, breaks, include.lowest = TRUE, labels = break_labels(breaks))
-  all_colours <- if (is.function(col.regions)) {
-    col.regions(nlevels(class))
-  } else {
-    rep_len(col.regions, nlevels(class))
-  }
+  all_colours <- pal(nlevels(class))
   present <- levels(class) %in% class
   list(class = droplevels(class), colours = all_colours[present])
 }
 
-make_tooltip <- function(geom, var, layer_name, tooltip) {
+make_tooltip <- function(geom, var, layer_name, tooltip, level = "dept") {
   data <- sf::st_drop_geometry(geom)
   text <- if (identical(tooltip, "auto")) {
     value <- data[[var]]
@@ -128,9 +135,15 @@ make_tooltip <- function(geom, var, layer_name, tooltip) {
     } else {
       as.character(value)
     }
-    paste0("<b>", data$dept_nom, "</b><br/>", layer_name, ": ", value)
+    paste0("<b>", unit_label(data, level), "</b><br/>", layer_name, ": ",
+           value)
   } else {
     glue::glue_data(data, tooltip)
   }
   lapply(as.character(text), htmltools::HTML)
+}
+
+# Name shown for each unit in tooltips
+unit_label <- function(data, level) {
+  data[[level_spec(level)$name]]
 }

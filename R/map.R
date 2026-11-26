@@ -72,17 +72,45 @@ map_dept <- function(data,
                      ...,
                      source = "auto",
                      refresh = FALSE) {
-  discretize <- match.arg(discretize)
+  map_interactive(
+    "dept", data, zcol, join_var, match.arg(discretize), n_breaks, palette,
+    inset, tooltip, basemaps, ..., source = source, refresh = refresh
+  )
+}
+
+#' @rdname map_dept
+#' @export
+map_dept_static <- function(data,
+                            zcol,
+                            join_var = "dept_cod",
+                            discretize = c("pretty", "jenks", "quantile",
+                                           "equal", "none"),
+                            n_breaks = 5,
+                            palette = "viridis",
+                            inset = TRUE,
+                            source = "auto",
+                            refresh = FALSE) {
+  map_static(
+    "dept", data, zcol, join_var, match.arg(discretize), n_breaks, palette,
+    inset, source = source, refresh = refresh
+  )
+}
+
+# Internals shared by all levels ------------------------------------------
+
+map_interactive <- function(level, data, zcol, join_var, discretize, n_breaks,
+                            palette, inset, tooltip, basemaps, ...,
+                            source, refresh) {
   stopifnot(is.character(tooltip), length(tooltip) == 1)
   pal <- palette_fun(palette)
 
-  geom <- atlas_geom("dept", source = source, inset = inset, refresh = refresh)
-  geom <- join_data(geom, data, join_var, zcol)
+  geom <- atlas_geom(level, source = source, inset = inset, refresh = refresh)
+  geom <- join_data(geom, data, join_var, zcol, level)
   titles <- layer_names(data, zcol)
 
   maps <- lapply(seq_along(zcol), function(i) {
     var <- unname(zcol[[i]])
-    label <- make_tooltip(geom, var, titles[[i]], tooltip)
+    label <- make_tooltip(geom, var, titles[[i]], tooltip, level)
     if (discretize == "none") {
       col <- var
       colours <- pal
@@ -111,27 +139,16 @@ map_dept <- function(data,
   m
 }
 
-#' @rdname map_dept
-#' @export
-map_dept_static <- function(data,
-                            zcol,
-                            join_var = "dept_cod",
-                            discretize = c("pretty", "jenks", "quantile",
-                                           "equal", "none"),
-                            n_breaks = 5,
-                            palette = "viridis",
-                            inset = TRUE,
-                            source = "auto",
-                            refresh = FALSE) {
-  discretize <- match.arg(discretize)
+map_static <- function(level, data, zcol, join_var, discretize, n_breaks,
+                       palette, inset, source, refresh) {
   if (length(zcol) != 1) {
-    stop("`map_dept_static()` maps one variable; `zcol` has ", length(zcol),
-         ".", call. = FALSE)
+    stop("Static maps show one variable; `zcol` has ", length(zcol), ".",
+         call. = FALSE)
   }
   pal <- palette_fun(palette)
 
-  geom <- atlas_geom("dept", source = source, inset = inset, refresh = refresh)
-  geom <- join_data(geom, data, join_var, zcol)
+  geom <- atlas_geom(level, source = source, inset = inset, refresh = refresh)
+  geom <- join_data(geom, data, join_var, zcol, level)
   var <- unname(zcol[[1]])
   title <- layer_names(data, zcol)[[1]]
 

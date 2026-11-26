@@ -109,7 +109,7 @@ geom_cached <- function(level, source, refresh) {
     geoboundaries = fetch_geoboundaries
   )
   geom <- fetch(level)
-  geom <- standardise_geom(geom, source)
+  geom <- standardise_geom(geom, source, level)
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
   saveRDS(geom, path)
   geom
@@ -157,10 +157,10 @@ fetch_geoboundaries <- function(level) {
   sf::st_sf(out, geometry = sf::st_geometry(raw))
 }
 
-standardise_geom <- function(geom, source) {
+standardise_geom <- function(geom, source, level = "dept") {
   geom <- sf::st_transform(geom, 4326)
   geom <- sf::st_make_valid(geom)
-  geom <- geom[order(geom$dept_cod), ]
+  geom <- geom[order(geom[[level_spec(level)$code]]), ]
   row.names(geom) <- NULL
   attr(geom, "source") <- source
   geom
