@@ -35,9 +35,15 @@ map_dept_static(df, zcol = c(`C-section rate` = "rate"),
   (`inset = TRUE`, the default in both), so their colour is visible at country
   scale. On the interactive map they then sit over the sea of the basemap;
   `inset = FALSE` gives the real geometry.
-- `discretize`: `"pretty"` (round numbers; default for `map_dept()`),
-  `"jenks"`, `"quantile"`, `"equal"` or `"none"` (continuous; default for
-  `map_dept_static()`).
+- Both functions take the same arguments and bin the same way, so the same
+  call gives the same classes and colours on either map.
+- `discretize`: `"pretty"` (round numbers, the default), `"jenks"`,
+  `"quantile"`, `"equal"` or `"none"` (continuous). `n_breaks` sets the
+  number of classes.
+- `palette`: a viridis option (`"viridis"`, `"magma"`, `"mako"`, ...), colours
+  to interpolate (`c("white", "darkred")`) or a function `n -> colours`.
+- `basemaps` (interactive): Esri's grey canvas and topographic map by default,
+  which need no API key.
 - `tooltip` (interactive): `"auto"` or a glue template on the joined data,
   e.g. `"{dept_nom}: {scales::percent(rate)}"`.
 - `map_dept_static()` returns a `ggplot`, so you can keep adding to it.

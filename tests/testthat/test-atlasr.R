@@ -135,8 +135,32 @@ test_that("static map is a ggplot with the data joined", {
   expect_s3_class(p, "ggplot")
   expect_equal(p$data$v, c(1, 5, 9))
   p2 <- map_dept_static(df, "v", discretize = "equal", n_breaks = 2)
-  expect_true(is.factor(p2$data$.class))
+  expect_true(is.factor(p2$data$v_class))
+  expect_s3_class(map_dept_static(df, "v", discretize = "none"), "ggplot")
   expect_error(map_dept_static(df, c("v", "v")), "one variable")
+})
+
+test_that("palette accepts a viridis option, colours or a function", {
+  expect_equal(palette_fun("magma")(3), viridisLite::magma(3))
+  expect_equal(palette_fun(c("white", "black"))(3),
+               c("#FFFFFF", "#7F7F7F", "#000000"))
+  f <- function(n) rep("red", n)
+  expect_identical(palette_fun(f), f)
+  expect_error(palette_fun("reds"), "Unknown viridis option")
+  expect_error(palette_fun(1), "palette")
+})
+
+test_that("both maps bin the same way and use the same colours", {
+  withr::local_options(atlasr.cache_dir = withr::local_tempdir())
+  dir.create(atlas_cache_dir(), showWarnings = FALSE)
+  saveRDS(standardise_geom(fake_geom(), "geoboundaries"),
+          cache_path("dept", "geoboundaries"))
+
+  df <- data.frame(dept_cod = c("05", "08", "88"), v = c(5, 50, 95))
+  p <- map_dept_static(df, "v", palette = "mako")
+  built <- ggplot2::ggplot_build(p)$data[[1]]
+  expected <- bin_values(df$v, 5, "pretty", palette_fun("mako"))
+  expect_setequal(unique(built$fill), expected$colours)
 })
 
 test_that("interactive map is a mapview object with one layer per zcol", {

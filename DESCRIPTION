@@ -24,14 +24,17 @@ Imports:
     ColOpenData,
     ggplot2,
     glue,
+    grDevices,
     htmltools,
     leafem,
     mapview,
     rlang,
     scales,
     sf,
+    stats,
     tools,
-    utils
+    utils,
+    viridisLite
 Suggests:
     daner,
     spelling,

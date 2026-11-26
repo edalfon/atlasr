@@ -6,42 +6,42 @@
 \title{Map department data}
 \usage{
 map_dept(
-  plot_data,
+  data,
   zcol,
   join_var = "dept_cod",
   discretize = c("pretty", "jenks", "quantile", "equal", "none"),
   n_breaks = 5,
+  palette = "viridis",
   inset = TRUE,
   tooltip = "auto",
-  map.types = c("Esri.WorldGrayCanvas", "Esri.WorldTopoMap"),
-  col.regions = mapview::mapviewGetOption("vector.palette"),
+  basemaps = c("Esri.WorldGrayCanvas", "Esri.WorldTopoMap"),
   ...,
   source = "auto",
   refresh = FALSE
 )
 
 map_dept_static(
-  plot_data,
+  data,
   zcol,
   join_var = "dept_cod",
-  discretize = c("none", "pretty", "jenks", "quantile", "equal"),
+  discretize = c("pretty", "jenks", "quantile", "equal", "none"),
   n_breaks = 5,
-  inset = TRUE,
   palette = "viridis",
+  inset = TRUE,
   source = "auto",
   refresh = FALSE
 )
 }
 \arguments{
-\item{plot_data}{a data frame with \code{join_var} and the \code{zcol} variable(s).}
+\item{data}{a data frame with \code{join_var} and the \code{zcol} variable(s).}
 
 \item{zcol}{the variable(s) to map. Names, if given, are used as the
 legend/layer title (e.g. \code{c(Population = "pob_total")}); otherwise the
 variable's \code{label} attribute, if any, or its name. \code{map_dept_static()}
 takes one variable only.}
 
-\item{join_var}{name of the column in \code{plot_data} with the department
-code. Codes can be character or numeric: \code{5}, \code{"5"} and \code{"05"} all match
+\item{join_var}{name of the column in \code{data} with the department code.
+Codes can be character or numeric: \code{5}, \code{"5"} and \code{"05"} all match
 Antioquia. A national-total row (code \code{"00"}) is ignored.}
 
 \item{discretize}{how to bin the values: \code{"pretty"} (round numbers),
@@ -52,6 +52,11 @@ legend, without thousands separators).}
 \item{n_breaks}{number of classes when binning (approximate for
 \code{"pretty"}).}
 
+\item{palette}{colours: a viridis option (\code{"viridis"}, \code{"magma"},
+\code{"cividis"}, \code{"mako"}, ...), a vector of colours to interpolate (e.g.
+\code{c("white", "darkred")}), or a function taking \code{n} and returning \code{n}
+colours.}
+
 \item{inset}{move and enlarge San Andres and Providencia next to the
 mainland (see \code{\link[=inset_sanandres]{inset_sanandres()}}).}
 
@@ -59,20 +64,16 @@ mainland (see \code{\link[=inset_sanandres]{inset_sanandres()}}).}
 template evaluated on the joined data, e.g.
 \code{"{dept_nom}: {scales::percent(rate)}"}.}
 
-\item{map.types}{basemap(s), as in \code{\link[mapview:mapview]{mapview::mapview()}}; the first is shown
-and the rest are offered in the layer switcher. The defaults, Esri's light
-grey canvas and topographic map, need no API key. mapview's own default,
-CARTO, now needs a key; OpenStreetMap's volunteer-run servers block maps
-opened from a local file or the RStudio viewer (no referrer).}
-
-\item{col.regions}{colour palette function, as in \code{\link[mapview:mapview]{mapview::mapview()}}.}
+\item{basemaps}{basemap(s), as \code{map.types} in \code{\link[mapview:mapview]{mapview::mapview()}}; the
+first is shown and the rest are offered in the layer switcher. The
+defaults, Esri's light grey canvas and topographic map, need no API key.
+mapview's own default, CARTO, now needs a key; OpenStreetMap's
+volunteer-run servers block maps opened from a local file or the RStudio
+viewer (no referrer).}
 
 \item{...}{further arguments passed to \code{\link[mapview:mapview]{mapview::mapview()}}.}
 
 \item{source, refresh}{passed to \code{\link[=atlas_geom]{atlas_geom()}}.}
-
-\item{palette}{for \code{map_dept_static()}, a viridis option (\code{"viridis"},
-\code{"magma"}, \code{"cividis"}, ...).}
 }
 \value{
 \code{map_dept()}: a \code{mapview} object. \code{map_dept_static()}: a \code{ggplot}.
@@ -89,6 +90,9 @@ Esri basemap. Several \code{zcol} give several layers, one shown at a time.
 \item \code{map_dept_static()} returns a \code{ggplot}, so you can keep adding to it.
 }
 
+Both take the same arguments and bin the values the same way, so the same
+call gives the same classes and colours on either map.
+
 Both move and enlarge San Andres and Providencia next to the mainland by
 default (\code{inset = TRUE}), so that their colour is visible at country
 scale. On the interactive map they then sit off the Caribbean coast, over
@@ -100,5 +104,6 @@ are. Use \code{inset = FALSE} for the real geometry.
 df <- data.frame(dept_cod = c("05", "11", "76"), rate = c(0.4, 0.5, 0.6))
 map_dept(df, zcol = c(`C-section rate` = "rate"))
 map_dept_static(df, zcol = "rate", discretize = "quantile", n_breaks = 3)
+map_dept_static(df, zcol = "rate", palette = c("white", "darkred"))
 }
 }

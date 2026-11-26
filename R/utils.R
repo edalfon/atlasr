@@ -7,53 +7,53 @@ pad_code <- function(x, width) {
   x
 }
 
-# Join plot_data to the geometries, by department code, keeping every
+# Join data to the geometries, by department code, keeping every
 # department (those without data get NA)
-join_data <- function(geom, plot_data, join_var, zcol) {
-  plot_data <- as.data.frame(plot_data)
-  if (!join_var %in% names(plot_data)) {
-    stop("`plot_data` has no column `", join_var, "` (set `join_var`).",
+join_data <- function(geom, data, join_var, zcol) {
+  data <- as.data.frame(data)
+  if (!join_var %in% names(data)) {
+    stop("`data` has no column `", join_var, "` (set `join_var`).",
          call. = FALSE)
   }
-  missing_vars <- setdiff(unname(zcol), names(plot_data))
+  missing_vars <- setdiff(unname(zcol), names(data))
   if (length(missing_vars) > 0) {
-    stop("`plot_data` has no column(s): ",
+    stop("`data` has no column(s): ",
          paste(missing_vars, collapse = ", "), call. = FALSE)
   }
 
-  codes <- pad_code(plot_data[[join_var]], 2)
+  codes <- pad_code(data[[join_var]], 2)
   # "00" is the national total in DANE tables: not a department, so ignore it
-  plot_data <- plot_data[!codes %in% "00", , drop = FALSE]
+  data <- data[!codes %in% "00", , drop = FALSE]
   codes <- codes[!codes %in% "00"]
   if (anyDuplicated(codes[!is.na(codes)])) {
-    stop("`plot_data` must have one row per department; duplicated codes: ",
+    stop("`data` must have one row per department; duplicated codes: ",
          paste(unique(codes[duplicated(codes) & !is.na(codes)]),
                collapse = ", "),
          call. = FALSE)
   }
   unmatched <- setdiff(codes, geom$dept_cod)
   if (length(unmatched) > 0) {
-    warning("Codes in `plot_data` that match no department (dropped): ",
+    warning("Codes in `data` that match no department (dropped): ",
             paste(unmatched, collapse = ", "), call. = FALSE)
   }
 
-  plot_data[[join_var]] <- NULL
-  plot_data <- plot_data[setdiff(names(plot_data), names(geom))]
-  vars <- names(plot_data)
+  data[[join_var]] <- NULL
+  data <- data[setdiff(names(data), names(geom))]
+  vars <- names(data)
   idx <- match(geom$dept_cod, codes)
   for (v in vars) {
-    geom[[v]] <- plot_data[[v]][idx]
+    geom[[v]] <- data[[v]][idx]
   }
   geom
 }
 
 # Layer/legend titles: zcol names first, then the variable label, then the
 # variable name
-layer_names <- function(plot_data, zcol) {
+layer_names <- function(data, zcol) {
   nms <- rlang::names2(zcol)
   vapply(seq_along(zcol), function(i) {
     if (nzchar(nms[[i]])) return(nms[[i]])
-    label <- attr(plot_data[[zcol[[i]]]], "label", exact = TRUE)
+    label <- attr(data[[zcol[[i]]]], "label", exact = TRUE)
     if (!is.null(label)) return(as.character(label))
     unname(zcol[[i]])
   }, character(1))
@@ -77,6 +77,30 @@ break_labels <- function(breaks) {
   b <- format(signif(breaks, 3), big.mark = ",", scientific = FALSE,
               trim = TRUE, drop0trailing = TRUE)
   paste(utils::head(b, -1), utils::tail(b, -1), sep = " \u2013 ")
+}
+
+viridis_options <- c("magma", "inferno", "plasma", "viridis", "cividis",
+                     "rocket", "mako", "turbo", LETTERS[1:8])
+
+# Turn `palette` into a function n -> n colours: a viridis option name, a
+# vector of colours to interpolate, or a function already
+palette_fun <- function(palette) {
+  if (is.function(palette)) {
+    return(palette)
+  }
+  if (!is.character(palette) || length(palette) == 0) {
+    stop("`palette` must be a viridis option, a vector of colours or a ",
+         "function.", call. = FALSE)
+  }
+  if (length(palette) == 1) {
+    if (!palette %in% viridis_options) {
+      stop("Unknown viridis option \"", palette, "\"; use one of ",
+           paste(viridis_options[1:8], collapse = ", "),
+           ", or give two or more colours.", call. = FALSE)
+    }
+    return(function(n) viridisLite::viridis(n, option = palette))
+  }
+  grDevices::colorRampPalette(palette)
 }
 
 # Bin values into a factor with formatted labels, and the colour of each
