@@ -18,8 +18,8 @@ df <- data.frame(
   rate     = c(0.42, 0.74, 0.50, 0.55, 0.38)
 )
 
-# interactive (mapview / leaflet over OpenStreetMap); several zcol give
-# several layers
+# interactive (mapview / leaflet over an Esri basemap, no API key needed);
+# several zcol give several layers
 map_dept(df, zcol = c(`C-section rate` = "rate"))
 
 # static (ggplot2)

@@ -13,7 +13,7 @@ map_dept(
   n_breaks = 5,
   inset = TRUE,
   tooltip = "auto",
-  map.types = "OpenStreetMap",
+  map.types = c("Esri.WorldGrayCanvas", "Esri.WorldTopoMap"),
   col.regions = mapview::mapviewGetOption("vector.palette"),
   ...,
   source = "auto",
@@ -59,8 +59,11 @@ mainland (see \code{\link[=inset_sanandres]{inset_sanandres()}}).}
 template evaluated on the joined data, e.g.
 \code{"{dept_nom}: {scales::percent(rate)}"}.}
 
-\item{map.types}{basemap(s), as in \code{\link[mapview:mapview]{mapview::mapview()}}. The default,
-OpenStreetMap, needs no API key (mapview's own default, CARTO, now does).}
+\item{map.types}{basemap(s), as in \code{\link[mapview:mapview]{mapview::mapview()}}; the first is shown
+and the rest are offered in the layer switcher. The defaults, Esri's light
+grey canvas and topographic map, need no API key. mapview's own default,
+CARTO, now needs a key; OpenStreetMap's volunteer-run servers block maps
+opened from a local file or the RStudio viewer (no referrer).}
 
 \item{col.regions}{colour palette function, as in \code{\link[mapview:mapview]{mapview::mapview()}}.}
 
@@ -81,8 +84,8 @@ geometries (see \code{\link[=atlas_geom]{atlas_geom()}}) and joins them for you.
 }
 \details{
 \itemize{
-\item \code{map_dept()} draws an interactive map with \code{mapview} (leaflet) over
-OpenStreetMap. Several \code{zcol} give several layers, one shown at a time.
+\item \code{map_dept()} draws an interactive map with \code{mapview} (leaflet) over an
+Esri basemap. Several \code{zcol} give several layers, one shown at a time.
 \item \code{map_dept_static()} returns a \code{ggplot}, so you can keep adding to it.
 }
 

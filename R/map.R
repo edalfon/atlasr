@@ -4,8 +4,8 @@
 #' which variable(s) to map, and get a choropleth map. atlasr finds the
 #' geometries (see [atlas_geom()]) and joins them for you.
 #'
-#' - `map_dept()` draws an interactive map with `mapview` (leaflet) over
-#'   OpenStreetMap. Several `zcol` give several layers, one shown at a time.
+#' - `map_dept()` draws an interactive map with `mapview` (leaflet) over an
+#'   Esri basemap. Several `zcol` give several layers, one shown at a time.
 #' - `map_dept_static()` returns a `ggplot`, so you can keep adding to it.
 #'
 #' Both move and enlarge San Andres and Providencia next to the mainland by
@@ -33,8 +33,11 @@
 #' @param tooltip `"auto"` (department name and value) or a [glue::glue()]
 #'   template evaluated on the joined data, e.g.
 #'   `"{dept_nom}: {scales::percent(rate)}"`.
-#' @param map.types basemap(s), as in [mapview::mapview()]. The default,
-#'   OpenStreetMap, needs no API key (mapview's own default, CARTO, now does).
+#' @param map.types basemap(s), as in [mapview::mapview()]; the first is shown
+#'   and the rest are offered in the layer switcher. The defaults, Esri's light
+#'   grey canvas and topographic map, need no API key. mapview's own default,
+#'   CARTO, now needs a key; OpenStreetMap's volunteer-run servers block maps
+#'   opened from a local file or the RStudio viewer (no referrer).
 #' @param col.regions colour palette function, as in [mapview::mapview()].
 #' @param ... further arguments passed to [mapview::mapview()].
 #' @param source,refresh passed to [atlas_geom()].
@@ -56,7 +59,7 @@ map_dept <- function(plot_data,
                      n_breaks = 5,
                      inset = TRUE,
                      tooltip = "auto",
-                     map.types = "OpenStreetMap",
+                     map.types = c("Esri.WorldGrayCanvas", "Esri.WorldTopoMap"),
                      col.regions = mapview::mapviewGetOption("vector.palette"),
                      ...,
                      source = "auto",
