@@ -8,6 +8,8 @@
 #   Rafael"), so atlasr gives each polygon the code of the seat that falls
 #   inside it. Used for ColOpenData's names too, so names are the same
 #   whatever the source.
+# - divipola_prov: province codes (made up by atlasr, see below), names and
+#   department; divipola_muni says which province each municipality is in.
 # - gb_dept_codes: geoBoundaries department names -> DIVIPOLA codes.
 #
 # Source: DANE's DIVIPOLA via daner (github.com/edalfon/daner). Re-run when
@@ -48,11 +50,33 @@ divipola_muni <- data.frame(
   lat = seats$lat
 )
 divipola_muni$muni_nom[divipola_muni$muni_cod == "11001"] <- "Bogotá, D.C."
+
+# Provinces: DANE groups the municipalities of each department into
+# provinces (subregions). Their names repeat across departments ("Norte",
+# "Oriente"), so daner::divipola_provins, which has one row per name, mixes
+# them up; use the province of each municipality instead. DANE gives them no
+# code, so atlasr makes one: the department code plus the province's
+# position in the department, alphabetically ("0501" ... "0509").
+divipola_muni$prov_nom <- title_case(seats$provincia)
+prov_key <- unique(divipola_muni[c("dept_cod", "prov_nom")])
+prov_key <- prov_key[order(prov_key$dept_cod, prov_key$prov_nom), ]
+prov_key$prov_cod <- paste0(
+  prov_key$dept_cod,
+  formatC(ave(seq_along(prov_key$dept_cod), prov_key$dept_cod,
+              FUN = seq_along), width = 2, flag = "0")
+)
+divipola_muni$prov_cod <- prov_key$prov_cod[match(
+  paste(divipola_muni$dept_cod, divipola_muni$prov_nom),
+  paste(prov_key$dept_cod, prov_key$prov_nom)
+)]
+divipola_prov <- prov_key[c("prov_cod", "prov_nom", "dept_cod")]
+row.names(divipola_prov) <- NULL
 divipola_muni <- divipola_muni[order(divipola_muni$muni_cod), ]
 row.names(divipola_muni) <- NULL
 stopifnot(
   !anyDuplicated(divipola_muni$muni_cod),
-  !anyNA(divipola_muni[c("lon", "lat")]),
+  !anyNA(divipola_muni[c("lon", "lat", "prov_cod")]),
+  !anyDuplicated(divipola_prov$prov_cod),
   all(divipola_muni$dept_cod %in% divipola_dept$dept_cod)
 )
 
@@ -90,6 +114,6 @@ gb_dept_codes <- gb_dept_codes[order(gb_dept_codes$dept_cod), ]
 row.names(gb_dept_codes) <- NULL
 
 usethis::use_data(
-  divipola_dept, divipola_muni, gb_dept_codes,
+  divipola_dept, divipola_muni, divipola_prov, gb_dept_codes,
   internal = TRUE, overwrite = TRUE
 )

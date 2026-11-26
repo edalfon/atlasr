@@ -5,16 +5,16 @@
 \title{Geometries of Colombian departments and municipalities}
 \usage{
 atlas_geom(
-  level = c("dept", "muni"),
+  level = c("dept", "prov", "muni"),
   source = c("auto", "colopendata", "geoboundaries"),
   inset = FALSE,
   refresh = FALSE
 )
 }
 \arguments{
-\item{level}{spatial level: \code{"dept"} (departments) or \code{"muni"}
-(municipalities, including the departmental corregimientos of the
-Amazon).}
+\item{level}{spatial level: \code{"dept"} (departments), \code{"prov"} (provinces)
+or \code{"muni"} (municipalities, including the departmental corregimientos
+of the Amazon).}
 
 \item{source}{where to get the geometries from: \code{"auto"}, \code{"colopendata"}
 or \code{"geoboundaries"}.}
@@ -29,7 +29,9 @@ real.}
 \value{
 an \code{sf} object in WGS 84 (EPSG:4326). For departments: \code{dept_cod}
 (2-character DIVIPOLA code) and \code{dept_nom}. For municipalities:
-\code{muni_cod} (5 characters), \code{muni_nom}, \code{dept_cod} and \code{dept_nom}. The
+\code{muni_cod} (5 characters), \code{muni_nom}, \code{dept_cod} and \code{dept_nom}. For
+provinces: \code{prov_cod} (4 characters), \code{prov_nom}, \code{dept_cod} and
+\code{dept_nom}. The
 attribute \code{"source"} says where the geometries came from.
 }
 \description{
@@ -55,11 +57,16 @@ downloading anything. Names come from DIVIPOLA whatever the source.
 
 Municipalities created after the source's boundaries have no polygon
 (e.g. Belen de Bajira, 27086, in geoBoundaries' 2020 boundaries).
+
+Provinces are not downloaded: they are the municipalities merged by
+province (DANE's grouping of the municipalities of each department; see
+\code{\link[=atlas_provinces]{atlas_provinces()}}), and cached too.
 }
 \examples{
 \dontrun{
 dept <- atlas_geom("dept")
 muni <- atlas_geom("muni")
+prov <- atlas_geom("prov")
 plot(sf::st_geometry(atlas_geom("dept", inset = TRUE)))
 }
 }

@@ -20,9 +20,13 @@
 #' Municipalities created after the source's boundaries have no polygon
 #' (e.g. Belen de Bajira, 27086, in geoBoundaries' 2020 boundaries).
 #'
-#' @param level spatial level: `"dept"` (departments) or `"muni"`
-#'   (municipalities, including the departmental corregimientos of the
-#'   Amazon).
+#' Provinces are not downloaded: they are the municipalities merged by
+#' province (DANE's grouping of the municipalities of each department; see
+#' [atlas_provinces()]), and cached too.
+#'
+#' @param level spatial level: `"dept"` (departments), `"prov"` (provinces)
+#'   or `"muni"` (municipalities, including the departmental corregimientos
+#'   of the Amazon).
 #' @param source where to get the geometries from: `"auto"`, `"colopendata"`
 #'   or `"geoboundaries"`.
 #' @param inset if `TRUE`, San Andres and Providencia are moved and enlarged
@@ -33,7 +37,9 @@
 #'
 #' @return an `sf` object in WGS 84 (EPSG:4326). For departments: `dept_cod`
 #'   (2-character DIVIPOLA code) and `dept_nom`. For municipalities:
-#'   `muni_cod` (5 characters), `muni_nom`, `dept_cod` and `dept_nom`. The
+#'   `muni_cod` (5 characters), `muni_nom`, `dept_cod` and `dept_nom`. For
+#'   provinces: `prov_cod` (4 characters), `prov_nom`, `dept_cod` and
+#'   `dept_nom`. The
 #'   attribute `"source"` says where the geometries came from.
 #' @export
 #'
@@ -41,16 +47,19 @@
 #' \dontrun{
 #' dept <- atlas_geom("dept")
 #' muni <- atlas_geom("muni")
+#' prov <- atlas_geom("prov")
 #' plot(sf::st_geometry(atlas_geom("dept", inset = TRUE)))
 #' }
-atlas_geom <- function(level = c("dept", "muni"),
+atlas_geom <- function(level = c("dept", "prov", "muni"),
                        source = c("auto", "colopendata", "geoboundaries"),
                        inset = FALSE,
                        refresh = FALSE) {
   level <- match.arg(level)
   source <- match.arg(source)
 
-  geom <- if (source == "auto") {
+  geom <- if (level == "prov") {
+    geom_prov(source, refresh)
+  } else if (source == "auto") {
     geom_auto(level, refresh)
   } else {
     geom_cached(level, source, refresh)
@@ -122,6 +131,35 @@ geom_cached <- function(level, source, refresh) {
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
   saveRDS(geom, path)
   geom
+}
+
+# Provinces: the municipalities merged by province, cached like a download
+geom_prov <- function(source, refresh) {
+  muni <- atlas_geom("muni", source = source, refresh = refresh)
+  path <- cache_path("prov", attr(muni, "source"))
+  if (!isTRUE(refresh) && file.exists(path)) {
+    return(readRDS(path))
+  }
+  prov_cod <- divipola_muni$prov_cod[match(muni$muni_cod,
+                                           divipola_muni$muni_cod)]
+  merged <- merge_units(muni, prov_cod)
+  geom <- with_names(merged$code, sf::st_geometry(merged), "prov")
+  geom <- standardise_geom(geom, attr(muni, "source"), "prov")
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  saveRDS(geom, path)
+  geom
+}
+
+# Merge polygons by a grouping (planar, in metres), keeping the CRS
+merge_units <- function(geom, by) {
+  crs <- sf::st_crs(geom)
+  local <- sf::st_transform(sf::st_geometry(geom), 3116)
+  parts <- split(local, by)
+  merged <- do.call(c, lapply(parts, sf::st_union))
+  sf::st_sf(
+    code = names(parts),
+    geometry = sf::st_transform(sf::st_sfc(merged, crs = 3116), crs)
+  )
 }
 
 fetch_colopendata <- function(level) {
@@ -222,6 +260,15 @@ with_names <- function(codes, geometry, level) {
       dept_cod = codes,
       dept_nom = divipola_dept$dept_nom[match(codes, divipola_dept$dept_cod)]
     )
+  } else if (level == "prov") {
+    i <- match(codes, divipola_prov$prov_cod)
+    dept_cod <- divipola_prov$dept_cod[i]
+    data.frame(
+      prov_cod = codes,
+      prov_nom = divipola_prov$prov_nom[i],
+      dept_cod = dept_cod,
+      dept_nom = divipola_dept$dept_nom[match(dept_cod, divipola_dept$dept_cod)]
+    )
   } else {
     i <- match(codes, divipola_muni$muni_cod)
     dept_cod <- divipola_muni$dept_cod[i]
@@ -243,6 +290,32 @@ standardise_geom <- function(geom, source, level = "dept") {
   row.names(geom) <- NULL
   attr(geom, "source") <- source
   geom
+}
+
+#' Provinces and their municipalities
+#'
+#' DANE groups the municipalities of each department into provinces
+#' (subregions). It gives them no code, so atlasr makes one: the department
+#' code plus the province's position in the department, alphabetically
+#' (`"0501"` Bajo Cauca ... `"0509"` Valle del Aburra). Use this table to
+#' add up municipal data by province before [map_prov()].
+#'
+#' Province names repeat across departments ("Norte", "Oriente"), so match
+#' on `prov_cod`, or on the name and the department together.
+#'
+#' @return a data frame with one row per municipality: `muni_cod`,
+#'   `muni_nom`, `prov_cod`, `prov_nom`, `dept_cod` and `dept_nom`.
+#' @export
+#'
+#' @examples
+#' head(atlas_provinces())
+#' unique(atlas_provinces()[c("prov_cod", "prov_nom", "dept_nom")])
+atlas_provinces <- function() {
+  out <- divipola_muni[c("muni_cod", "muni_nom", "prov_cod", "prov_nom",
+                         "dept_cod")]
+  out$dept_nom <- divipola_dept$dept_nom[match(out$dept_cod,
+                                               divipola_dept$dept_cod)]
+  out
 }
 
 #' Where atlasr caches the geometries
