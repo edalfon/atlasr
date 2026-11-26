@@ -254,3 +254,13 @@ test_that("the real sources download and standardise", {
   col_muni <- suppressWarnings(atlas_geom("muni", source = "colopendata"))
   expect_gt(nrow(col_muni), 1100)
 })
+
+test_that("binning copes with no values or a single value", {
+  pal <- function(n) paste0("col", seq_len(n))
+  none <- bin_values(c(NA, NA), 5, "pretty", pal)
+  expect_true(all(is.na(none$class)))
+  expect_length(none$colours, 0)
+  one <- bin_values(c(3, 3, NA), 5, "jenks", pal)
+  expect_equal(as.character(one$class), c("3", "3", NA))
+  expect_equal(one$colours, "col1")
+})

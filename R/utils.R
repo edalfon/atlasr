@@ -121,6 +121,17 @@ palette_fun <- function(palette) {
 # colour even when an empty class is dropped (mapview needs exactly one colour
 # per level present, or it trims the palette and shifts the colours).
 bin_values <- function(x, n, method, pal) {
+  finite <- unique(x[is.finite(x)])
+  if (length(finite) == 0) {
+    # nothing to bin (e.g. no unit matched): every unit gets the NA colour
+    return(list(class = factor(rep(NA, length(x))), colours = character()))
+  }
+  if (length(finite) == 1) {
+    label <- format(signif(finite, 3), big.mark = ",", scientific = FALSE,
+                    trim = TRUE, drop0trailing = TRUE)
+    class <- factor(ifelse(is.finite(x), label, NA), levels = label)
+    return(list(class = class, colours = pal(1)))
+  }
   breaks <- get_breaks(x, n, method)
   class <- cut(x, breaks, include.lowest = TRUE, labels = break_labels(breaks))
   all_colours <- pal(nlevels(class))
