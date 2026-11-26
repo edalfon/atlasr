@@ -12,7 +12,9 @@ pad_code <- function(x, width) {
 level_spec <- function(level) {
   switch(level,
     dept = list(code = "dept_cod", width = 2, name = "dept_nom",
-                unit = "department", total = "00")
+                unit = "department", total = "00"),
+    muni = list(code = "muni_cod", width = 5, name = "muni_nom",
+                unit = "municipality", total = character())
   )
 }
 
@@ -143,7 +145,11 @@ make_tooltip <- function(geom, var, layer_name, tooltip, level = "dept") {
   lapply(as.character(text), htmltools::HTML)
 }
 
-# Name shown for each unit in tooltips
+# Name shown for each unit in tooltips: "Medellin (Antioquia)" for
+# municipalities, as names repeat across departments
 unit_label <- function(data, level) {
+  if (level == "muni") {
+    return(paste0(data$muni_nom, " (", data$dept_nom, ")"))
+  }
   data[[level_spec(level)$name]]
 }

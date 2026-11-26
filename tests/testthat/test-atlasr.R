@@ -183,6 +183,54 @@ test_that("interactive map is a mapview object with one layer per zcol", {
   expect_s4_class(map_dept(df, "a", discretize = "none"), "mapview")
 })
 
+test_that("municipality polygons get the code of the seat inside them", {
+  seat <- function(code) {
+    unlist(divipola_muni[divipola_muni$muni_cod == code, c("lon", "lat")])
+  }
+  around <- function(code, d = 0.05) {
+    p <- seat(code)
+    sf::st_polygon(list(rbind(
+      p + c(-d, -d), p + c(d, -d), p + c(d, d), p + c(-d, d), p + c(-d, -d)
+    )))
+  }
+  # Bajo Baudo and Belen de Bajira's seats (as DIVIPOLA locates them) in one
+  # polygon: the name decides
+  both <- sf::st_convex_hull(sf::st_union(around("27077"), around("27086")))
+  ocean <- sf::st_polygon(list(rbind(
+    c(-85, 0), c(-84, 0), c(-84, 1), c(-85, 1), c(-85, 0)
+  )))
+  polys <- sf::st_sf(
+    shapeName = c("Medellín", "Bajo Baudó (Pizarro)", "Nowhere"),
+    geometry = sf::st_sfc(around("05001"), both, ocean, crs = 4326)
+  )
+  expect_warning(codes <- seat_codes(polys), "Nowhere")
+  expect_equal(codes, c("05001", "27077", NA))
+})
+
+test_that("standard columns and names come from DIVIPOLA", {
+  g <- sf::st_sfc(sf::st_point(c(0, 0)), sf::st_point(c(1, 1)), crs = 4326)
+  muni <- with_names(c("05001", "11001"), g, "muni")
+  expect_named(muni, c("muni_cod", "muni_nom", "dept_cod", "dept_nom",
+                       "geometry"))
+  expect_equal(muni$muni_nom, c("Medellín", "Bogotá, D.C."))
+  expect_equal(muni$dept_nom, c("Antioquia", "Bogotá"))
+  dept <- with_names(c("05", "88"), g, "dept")
+  expect_equal(dept$dept_nom, c("Antioquia", "San Andrés"))
+})
+
+test_that("municipality codes are padded to 5; tooltips name the department", {
+  geom <- with_names(
+    c("05001", "08001"),
+    sf::st_sfc(sf::st_point(c(0, 0)), sf::st_point(c(1, 1)), crs = 4326),
+    "muni"
+  )
+  out <- join_data(geom, data.frame(muni_cod = 5001, x = 1), "muni_cod", "x",
+                   "muni")
+  expect_equal(out$x, c(1, NA))
+  expect_equal(unit_label(sf::st_drop_geometry(out), "muni"),
+               c("Medellín (Antioquia)", "Barranquilla (Atlántico)"))
+})
+
 test_that("the real sources download and standardise", {
   skip_on_cran()
   skip_if_offline()
@@ -193,9 +241,16 @@ test_that("the real sources download and standardise", {
   expect_setequal(gb$dept_cod, gb_dept_codes$dept_cod)
   expect_equal(sf::st_crs(gb)$epsg, 4326L)
 
+  gb_muni <- atlas_geom("muni", source = "geoboundaries")
+  expect_gt(nrow(gb_muni), 1100)
+  expect_false(anyDuplicated(gb_muni$muni_cod) > 0)
+  expect_true(all(gb_muni$dept_cod %in% gb$dept_cod))
+
   col <- tryCatch(suppressWarnings(atlas_geom("dept", source = "colopendata")),
                   error = function(e) NULL)
   skip_if(is.null(col), "ColOpenData server unavailable")
   expect_equal(nrow(col), 33)
   expect_setequal(col$dept_cod, gb$dept_cod)
+  col_muni <- suppressWarnings(atlas_geom("muni", source = "colopendata"))
+  expect_gt(nrow(col_muni), 1100)
 })

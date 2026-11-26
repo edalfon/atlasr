@@ -2,17 +2,19 @@
 % Please edit documentation in R/geom.R
 \name{atlas_geom}
 \alias{atlas_geom}
-\title{Geometries of Colombian departments}
+\title{Geometries of Colombian departments and municipalities}
 \usage{
 atlas_geom(
-  level = "dept",
+  level = c("dept", "muni"),
   source = c("auto", "colopendata", "geoboundaries"),
   inset = FALSE,
   refresh = FALSE
 )
 }
 \arguments{
-\item{level}{spatial level. Only \code{"dept"} (departments) for now.}
+\item{level}{spatial level: \code{"dept"} (departments) or \code{"muni"}
+(municipalities, including the departmental corregimientos of the
+Amazon).}
 
 \item{source}{where to get the geometries from: \code{"auto"}, \code{"colopendata"}
 or \code{"geoboundaries"}.}
@@ -25,32 +27,39 @@ real.}
 \item{refresh}{if \code{TRUE}, ignore the cache and download again.}
 }
 \value{
-an \code{sf} object in WGS 84 (EPSG:4326) with columns \code{dept_cod}
-(2-character DIVIPOLA code), \code{dept_nom} and \code{geometry}. The attribute
-\code{"source"} says where it came from.
+an \code{sf} object in WGS 84 (EPSG:4326). For departments: \code{dept_cod}
+(2-character DIVIPOLA code) and \code{dept_nom}. For municipalities:
+\code{muni_cod} (5 characters), \code{muni_nom}, \code{dept_cod} and \code{dept_nom}. The
+attribute \code{"source"} says where the geometries came from.
 }
 \description{
-Returns the department polygons as an \code{sf} object with standard columns,
-so that you never have to handle the geometries yourself. They are not
-shipped with the package: the first call downloads them and caches them
-locally (see \code{\link[=atlas_cache_dir]{atlas_cache_dir()}}), so later calls work offline.
+Returns the polygons as an \code{sf} object with standard columns, so that you
+never have to handle the geometries yourself. They are not shipped with
+the package: the first call downloads them and caches them locally (see
+\code{\link[=atlas_cache_dir]{atlas_cache_dir()}}), so later calls work offline.
 }
 \details{
 Sources, tried in this order when \code{source = "auto"}:
 \itemize{
 \item \code{"colopendata"}: DANE's Marco Geoestadistico Nacional 2018 (simplified),
 via \code{\link[ColOpenData:download_geospatial]{ColOpenData::download_geospatial()}}. Comes with DIVIPOLA codes.
-\item \code{"geoboundaries"}: geoBoundaries gbOpen COL ADM1 (IGAC 2024, simplified,
-CC BY 4.0). It has names only, so atlasr adds the DIVIPOLA codes from an
-internal lookup table.
+\item \code{"geoboundaries"}: geoBoundaries gbOpen COL, simplified, CC BY 4.0:
+departments from IGAC (2024), municipalities from DANE (2020). It has
+names only, so atlasr adds the DIVIPOLA codes: departments by name,
+municipalities by which polygon contains each municipal seat
+(DIVIPOLA's cabecera municipal), since municipal names repeat.
 }
 
 With \code{source = "auto"}, a cached copy of any source is used before
-downloading anything.
+downloading anything. Names come from DIVIPOLA whatever the source.
+
+Municipalities created after the source's boundaries have no polygon
+(e.g. Belen de Bajira, 27086, in geoBoundaries' 2020 boundaries).
 }
 \examples{
 \dontrun{
 dept <- atlas_geom("dept")
+muni <- atlas_geom("muni")
 plot(sf::st_geometry(atlas_geom("dept", inset = TRUE)))
 }
 }
