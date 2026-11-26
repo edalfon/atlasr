@@ -1,40 +1,44 @@
 Package: atlasr
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
-Authors@R: 
+Title: Quick Maps of Colombia by Department
+Version: 0.1.0.9000
+Authors@R:
     person(given = "Eduardo",
            family = "Alfonso-Sierra",
            role = c("aut", "cre", "cph"),
            email = "edalfon@gmail.com",
            comment = c(ORCID = "0000-0001-6430-5135"))
-Description: What the package does (one paragraph).
+Description: Draw choropleth maps of Colombian departments from a data frame
+    with DIVIPOLA codes, without handling geometries. Interactive maps use
+    'mapview' (leaflet); static maps use 'ggplot2', with San Andres and
+    Providencia moved and enlarged next to the mainland. Geometries are not
+    shipped with the package: they are downloaded on first use from
+    'ColOpenData' (DANE MGN 2018) or, as a fallback, from geoBoundaries
+    (IGAC 2024, CC BY 4.0), and cached locally.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-US
-LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
-Depends: R (>= 2.10)
-Imports: 
-    magrittr,
-    sp,
-    efun,
-    mapview,
-    rlang (>= 0.1.2),
+Depends: R (>= 4.1.0)
+Imports:
+    classInt,
+    ColOpenData,
+    ggplot2,
     glue,
     htmltools,
-    purrr,
-    scales,
-    vctrs,
-    dplyr,
-    daner,
     leafem,
-    rgeos
-Suggests: 
-    testthat (>= 3.0.0),
+    mapview,
+    rlang,
+    scales,
+    sf,
+    tools,
+    utils
+Suggests:
+    daner,
     spelling,
-    knitr,
-    rmarkdown,
-    roxygen2
+    testthat (>= 3.0.0),
+    usethis,
+    withr
+Remotes:
+    edalfon/daner
 Config/testthat/edition: 3
-VignetteBuilder: knitr
+Config/roxygen2/version: 8.1.0

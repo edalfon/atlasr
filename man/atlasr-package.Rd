@@ -4,12 +4,23 @@
 \name{atlasr-package}
 \alias{atlasr}
 \alias{atlasr-package}
-\title{atlasr: What the Package Does (One Line, Title Case)}
+\title{atlasr: quick maps of Colombia by department}
 \description{
-What the package does (one paragraph).
+Map a data frame with DIVIPOLA codes without handling geometries:
+\code{\link[=map_dept]{map_dept()}} (interactive, mapview/leaflet) and \code{\link[=map_dept_static]{map_dept_static()}}
+(ggplot2). The geometries come from \code{\link[=atlas_geom]{atlas_geom()}}, which downloads them on
+first use and caches them locally.
+}
+\details{
+atlasr started in 2018 as an internal package for the atlas project.
 }
 \author{
 \strong{Maintainer}: Eduardo Alfonso-Sierra \email{edalfon@gmail.com} (\href{https://orcid.org/0000-0001-6430-5135}{ORCID}) [copyright holder]
+
+Authors:
+\itemize{
+  \item Eduardo Alfonso-Sierra \email{edalfon@gmail.com} (\href{https://orcid.org/0000-0001-6430-5135}{ORCID}) [copyright holder]
+}
 
 }
 \keyword{internal}
