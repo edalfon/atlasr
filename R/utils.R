@@ -46,8 +46,11 @@ join_data <- function(geom, data, join_var, zcol, level = "dept") {
   }
   unmatched <- setdiff(codes, geom[[spec$code]])
   if (length(unmatched) > 0) {
-    warning("Codes in `data` that match no ", spec$unit, " (dropped): ",
-            paste(unmatched, collapse = ", "), call. = FALSE)
+    source <- attr(geom, "source")
+    warning("Codes in `data` that match no ", spec$unit, " in the ",
+            if (is.null(source)) "" else paste0(source, " "),
+            "geometries (dropped): ", paste(unmatched, collapse = ", "),
+            call. = FALSE)
   }
 
   data[[join_var]] <- NULL

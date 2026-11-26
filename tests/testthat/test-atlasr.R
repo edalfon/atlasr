@@ -255,6 +255,45 @@ test_that("the real sources download and standardise", {
   expect_gt(nrow(col_muni), 1100)
 })
 
+test_that("municipality maps work, with department borders", {
+  withr::local_options(atlasr.cache_dir = withr::local_tempdir())
+  dir.create(atlas_cache_dir(), showWarnings = FALSE)
+  square <- function(x, y, d = 0.5) {
+    sf::st_multipolygon(list(list(rbind(
+      c(x, y), c(x + d, y), c(x + d, y + d), c(x, y + d), c(x, y)
+    ))))
+  }
+  geom <- with_names(
+    c("05001", "05002", "08001"),
+    sf::st_sfc(square(-76, 6), square(-75.5, 6), square(-75, 10.5),
+               crs = 4326),
+    "muni"
+  )
+  saveRDS(standardise_geom(geom, "geoboundaries", "muni"),
+          cache_path("muni", "geoboundaries"))
+
+  df <- data.frame(muni_cod = c(5001, 5002, 8001), v = c(1, 5, 9))
+  p <- map_muni_static(df, "v")
+  expect_s3_class(p, "ggplot")
+  expect_length(p$layers, 2) # municipalities + department borders
+  expect_length(map_muni_static(df, "v", dept_borders = FALSE)$layers, 1)
+
+  outline <- dept_outline(p$data)
+  expect_equal(outline$dept_cod, c("05", "08"))
+
+  m <- map_muni(df, "v")
+  expect_s4_class(m, "mapview")
+  expect_length(m@object, 2) # municipalities + department borders
+  expect_length(map_muni(df, "v", dept_borders = FALSE)@object, 1)
+  # style defaults can be overridden through ...
+  expect_s4_class(map_muni(df, "v", lwd = 2), "mapview")
+
+  expect_warning(
+    map_muni_static(data.frame(muni_cod = "27086", v = 1), "v"),
+    "geoboundaries geometries"
+  )
+})
+
 test_that("binning copes with no values or a single value", {
   pal <- function(n) paste0("col", seq_len(n))
   none <- bin_values(c(NA, NA), 5, "pretty", pal)
