@@ -19,8 +19,8 @@ or \code{"geoboundaries"}.}
 
 \item{inset}{if \code{TRUE}, San Andres and Providencia are moved and enlarged
 next to the Caribbean coast, as in most printed maps of Colombia (see
-\code{\link[=inset_sanandres]{inset_sanandres()}}). Use it for static maps only: the coordinates of the
-islands are no longer real.}
+\code{\link[=inset_sanandres]{inset_sanandres()}}). The coordinates of the islands are then no longer
+real.}
 
 \item{refresh}{if \code{TRUE}, ignore the cache and download again.}
 }

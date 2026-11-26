@@ -9,9 +9,11 @@ map_dept(
   plot_data,
   zcol,
   join_var = "dept_cod",
-  discretize = c("none", "jenks", "quantile", "equal"),
+  discretize = c("pretty", "jenks", "quantile", "equal", "none"),
   n_breaks = 5,
+  inset = TRUE,
   tooltip = "auto",
+  map.types = "OpenStreetMap",
   col.regions = mapview::mapviewGetOption("vector.palette"),
   ...,
   source = "auto",
@@ -22,7 +24,7 @@ map_dept_static(
   plot_data,
   zcol,
   join_var = "dept_cod",
-  discretize = c("none", "jenks", "quantile", "equal"),
+  discretize = c("none", "pretty", "jenks", "quantile", "equal"),
   n_breaks = 5,
   inset = TRUE,
   palette = "viridis",
@@ -42,24 +44,29 @@ takes one variable only.}
 code. Codes can be character or numeric: \code{5}, \code{"5"} and \code{"05"} all match
 Antioquia. A national-total row (code \code{"00"}) is ignored.}
 
-\item{discretize}{how to bin the values: \code{"none"} (continuous colours; for
-\code{map_dept()} that's mapview's own binning), \code{"jenks"} (natural breaks),
-\code{"quantile"} or \code{"equal"} (equal width).}
+\item{discretize}{how to bin the values: \code{"pretty"} (round numbers),
+\code{"jenks"} (natural breaks), \code{"quantile"}, \code{"equal"} (equal width), or
+\code{"none"} (continuous colours; for \code{map_dept()} that means mapview's own
+legend, without thousands separators).}
 
-\item{n_breaks}{number of classes when binning.}
+\item{n_breaks}{number of classes when binning (approximate for
+\code{"pretty"}).}
+
+\item{inset}{move and enlarge San Andres and Providencia next to the
+mainland (see \code{\link[=inset_sanandres]{inset_sanandres()}}).}
 
 \item{tooltip}{\code{"auto"} (department name and value) or a \code{\link[glue:glue]{glue::glue()}}
 template evaluated on the joined data, e.g.
 \code{"{dept_nom}: {scales::percent(rate)}"}.}
+
+\item{map.types}{basemap(s), as in \code{\link[mapview:mapview]{mapview::mapview()}}. The default,
+OpenStreetMap, needs no API key (mapview's own default, CARTO, now does).}
 
 \item{col.regions}{colour palette function, as in \code{\link[mapview:mapview]{mapview::mapview()}}.}
 
 \item{...}{further arguments passed to \code{\link[mapview:mapview]{mapview::mapview()}}.}
 
 \item{source, refresh}{passed to \code{\link[=atlas_geom]{atlas_geom()}}.}
-
-\item{inset}{move and enlarge San Andres and Providencia next to the
-mainland (see \code{\link[=inset_sanandres]{inset_sanandres()}}).}
 
 \item{palette}{for \code{map_dept_static()}, a viridis option (\code{"viridis"},
 \code{"magma"}, \code{"cividis"}, ...).}
@@ -74,11 +81,16 @@ geometries (see \code{\link[=atlas_geom]{atlas_geom()}}) and joins them for you.
 }
 \details{
 \itemize{
-\item \code{map_dept()} draws an interactive map with \code{mapview} (leaflet), on the
-real geometry. Several \code{zcol} give several layers, one shown at a time.
-\item \code{map_dept_static()} returns a \code{ggplot} (so you can add to it), with San
-Andres and Providencia moved next to the mainland by default.
+\item \code{map_dept()} draws an interactive map with \code{mapview} (leaflet) over
+OpenStreetMap. Several \code{zcol} give several layers, one shown at a time.
+\item \code{map_dept_static()} returns a \code{ggplot}, so you can keep adding to it.
 }
+
+Both move and enlarge San Andres and Providencia next to the mainland by
+default (\code{inset = TRUE}), so that their colour is visible at country
+scale. On the interactive map they then sit off the Caribbean coast, over
+the sea of the basemap; their tooltip still says which department they
+are. Use \code{inset = FALSE} for the real geometry.
 }
 \examples{
 \dontrun{

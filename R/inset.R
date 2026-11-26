@@ -12,8 +12,10 @@
 #' lower-left corner of its bounding box, which is then placed at
 #' (700000, 1700000) for San Andres and (777000, 1770000) for Providencia.
 #'
-#' Only for static maps: the coordinates of the islands are no longer real,
-#' so on an interactive map with a basemap they would float over the sea.
+#' The coordinates of the islands are no longer real: on an interactive map
+#' they sit over the sea of the basemap, off the Caribbean coast. That's the
+#' price of seeing their colour at country scale; use the real geometry
+#' (`inset = FALSE`) when the location itself matters.
 #'
 #' @param geom an `sf` object from [atlas_geom()] (with a `dept_cod` column).
 #'

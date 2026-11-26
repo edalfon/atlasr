@@ -64,6 +64,16 @@ test_that("layer names come from zcol names, then labels, then names", {
                c("Name A", "Label B", "c"))
 })
 
+test_that("binning drops empty classes but keeps each class's colour", {
+  pal <- function(n) paste0("col", seq_len(n))
+  # pretty breaks 0-20-40-60-80-100: classes 2 and 3 empty
+  b <- bin_values(c(5, 10, 70, 90, 95), 5, "pretty", pal)
+  expect_true(is.factor(b$class))
+  expect_equal(levels(b$class), c("0 – 20", "60 – 80", "80 – 100"))
+  expect_equal(b$colours, c("col1", "col4", "col5"))
+  expect_equal(nlevels(b$class), length(b$colours))
+})
+
 test_that("breaks and labels", {
   x <- c(1, 2, 3, 10, 11, 12, 100, 101)
   for (m in c("jenks", "quantile", "equal")) {
@@ -139,6 +149,14 @@ test_that("interactive map is a mapview object with one layer per zcol", {
   m <- map_dept(df, c(A = "a", B = "b"))
   expect_s4_class(m, "mapview")
   expect_length(m@object, 2)
+
+  # islands moved by default, real geometry on request
+  bbox_of <- function(m) sf::st_bbox(m@object[[1]])
+  expect_gt(bbox_of(m)[["xmin"]], -80)
+  expect_lt(bbox_of(map_dept(df, "a", inset = FALSE))[["xmin"]], -81.5)
+
+  # continuous colours also work
+  expect_s4_class(map_dept(df, "a", discretize = "none"), "mapview")
 })
 
 test_that("the real sources download and standardise", {

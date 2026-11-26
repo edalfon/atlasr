@@ -4,10 +4,15 @@
 #' which variable(s) to map, and get a choropleth map. atlasr finds the
 #' geometries (see [atlas_geom()]) and joins them for you.
 #'
-#' - `map_dept()` draws an interactive map with `mapview` (leaflet), on the
-#'   real geometry. Several `zcol` give several layers, one shown at a time.
-#' - `map_dept_static()` returns a `ggplot` (so you can add to it), with San
-#'   Andres and Providencia moved next to the mainland by default.
+#' - `map_dept()` draws an interactive map with `mapview` (leaflet) over
+#'   OpenStreetMap. Several `zcol` give several layers, one shown at a time.
+#' - `map_dept_static()` returns a `ggplot`, so you can keep adding to it.
+#'
+#' Both move and enlarge San Andres and Providencia next to the mainland by
+#' default (`inset = TRUE`), so that their colour is visible at country
+#' scale. On the interactive map they then sit off the Caribbean coast, over
+#' the sea of the basemap; their tooltip still says which department they
+#' are. Use `inset = FALSE` for the real geometry.
 #'
 #' @param plot_data a data frame with `join_var` and the `zcol` variable(s).
 #' @param zcol the variable(s) to map. Names, if given, are used as the
@@ -17,13 +22,19 @@
 #' @param join_var name of the column in `plot_data` with the department
 #'   code. Codes can be character or numeric: `5`, `"5"` and `"05"` all match
 #'   Antioquia. A national-total row (code `"00"`) is ignored.
-#' @param discretize how to bin the values: `"none"` (continuous colours; for
-#'   `map_dept()` that's mapview's own binning), `"jenks"` (natural breaks),
-#'   `"quantile"` or `"equal"` (equal width).
-#' @param n_breaks number of classes when binning.
+#' @param discretize how to bin the values: `"pretty"` (round numbers),
+#'   `"jenks"` (natural breaks), `"quantile"`, `"equal"` (equal width), or
+#'   `"none"` (continuous colours; for `map_dept()` that means mapview's own
+#'   legend, without thousands separators).
+#' @param n_breaks number of classes when binning (approximate for
+#'   `"pretty"`).
+#' @param inset move and enlarge San Andres and Providencia next to the
+#'   mainland (see [inset_sanandres()]).
 #' @param tooltip `"auto"` (department name and value) or a [glue::glue()]
 #'   template evaluated on the joined data, e.g.
 #'   `"{dept_nom}: {scales::percent(rate)}"`.
+#' @param map.types basemap(s), as in [mapview::mapview()]. The default,
+#'   OpenStreetMap, needs no API key (mapview's own default, CARTO, now does).
 #' @param col.regions colour palette function, as in [mapview::mapview()].
 #' @param ... further arguments passed to [mapview::mapview()].
 #' @param source,refresh passed to [atlas_geom()].
@@ -40,9 +51,12 @@
 map_dept <- function(plot_data,
                      zcol,
                      join_var = "dept_cod",
-                     discretize = c("none", "jenks", "quantile", "equal"),
+                     discretize = c("pretty", "jenks", "quantile", "equal",
+                                    "none"),
                      n_breaks = 5,
+                     inset = TRUE,
                      tooltip = "auto",
+                     map.types = "OpenStreetMap",
                      col.regions = mapview::mapviewGetOption("vector.palette"),
                      ...,
                      source = "auto",
@@ -50,22 +64,31 @@ map_dept <- function(plot_data,
   discretize <- match.arg(discretize)
   stopifnot(is.character(tooltip), length(tooltip) == 1)
 
-  geom <- atlas_geom("dept", source = source, inset = FALSE, refresh = refresh)
+  geom <- atlas_geom("dept", source = source, inset = inset, refresh = refresh)
   geom <- join_data(geom, plot_data, join_var, zcol)
   layer_names <- layer_names(plot_data, zcol)
 
   maps <- lapply(seq_along(zcol), function(i) {
     var <- unname(zcol[[i]])
-    at <- if (discretize == "none") NULL else {
-      get_breaks(geom[[var]], n_breaks, discretize)
+    label <- make_tooltip(geom, var, layer_names[[i]], tooltip)
+    if (discretize == "none") {
+      col <- var
+      colours <- col.regions
+    } else {
+      # bin here rather than with mapview's `at`, whose legend can't format
+      # numbers: a factor shows our labels ("1,000 - 2,000") in order
+      col <- paste0(var, "_class")
+      binned <- bin_values(geom[[var]], n_breaks, discretize, col.regions)
+      geom[[col]] <- binned$class
+      colours <- binned$colours
     }
     mapview::mapview(
       geom,
-      zcol = var,
-      at = at,
-      col.regions = col.regions,
+      zcol = col,
+      col.regions = colours,
+      map.types = map.types,
       layer.name = layer_names[[i]],
-      label = make_tooltip(geom, var, layer_names[[i]], tooltip),
+      label = label,
       hide = i > 1,
       ...
     )
@@ -77,15 +100,14 @@ map_dept <- function(plot_data,
 }
 
 #' @rdname map_dept
-#' @param inset move and enlarge San Andres and Providencia next to the
-#'   mainland (see [inset_sanandres()]).
 #' @param palette for `map_dept_static()`, a viridis option (`"viridis"`,
 #'   `"magma"`, `"cividis"`, ...).
 #' @export
 map_dept_static <- function(plot_data,
                             zcol,
                             join_var = "dept_cod",
-                            discretize = c("none", "jenks", "quantile", "equal"),
+                            discretize = c("none", "pretty", "jenks", "quantile",
+                                           "equal"),
                             n_breaks = 5,
                             inset = TRUE,
                             palette = "viridis",

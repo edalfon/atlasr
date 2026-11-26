@@ -60,9 +60,13 @@ layer_names <- function(plot_data, zcol) {
 }
 
 # Class breaks; "jenks" uses Fisher's algorithm (same optimal breaks, faster)
-get_breaks <- function(x, n, method = c("jenks", "quantile", "equal")) {
+get_breaks <- function(x, n,
+                       method = c("pretty", "jenks", "quantile", "equal")) {
   method <- match.arg(method)
   x <- x[is.finite(x)]
+  if (method == "pretty") {
+    return(pretty(x, n))
+  }
   style <- c(jenks = "fisher", quantile = "quantile", equal = "equal")[[method]]
   breaks <- suppressWarnings(classInt::classIntervals(x, n, style = style)$brks)
   unique(breaks)
@@ -73,6 +77,22 @@ break_labels <- function(breaks) {
   b <- format(signif(breaks, 3), big.mark = ",", scientific = FALSE,
               trim = TRUE, drop0trailing = TRUE)
   paste(utils::head(b, -1), utils::tail(b, -1), sep = " \u2013 ")
+}
+
+# Bin values into a factor with formatted labels, and the colour of each
+# class that occurs. Colours come from the full palette, so a class keeps its
+# colour even when an empty class is dropped (mapview needs exactly one colour
+# per level present, or it trims the palette and shifts the colours).
+bin_values <- function(x, n, method, col.regions) {
+  breaks <- get_breaks(x, n, method)
+  class <- cut(x, breaks, include.lowest = TRUE, labels = break_labels(breaks))
+  all_colours <- if (is.function(col.regions)) {
+    col.regions(nlevels(class))
+  } else {
+    rep_len(col.regions, nlevels(class))
+  }
+  present <- levels(class) %in% class
+  list(class = droplevels(class), colours = all_colours[present])
 }
 
 make_tooltip <- function(geom, var, layer_name, tooltip) {

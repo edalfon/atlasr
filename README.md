@@ -18,10 +18,11 @@ df <- data.frame(
   rate     = c(0.42, 0.74, 0.50, 0.55, 0.38)
 )
 
-# interactive (mapview / leaflet); several zcol give several layers
+# interactive (mapview / leaflet over OpenStreetMap); several zcol give
+# several layers
 map_dept(df, zcol = c(`C-section rate` = "rate"))
 
-# static (ggplot2), San Andrés and Providencia moved next to the mainland
+# static (ggplot2)
 map_dept_static(df, zcol = c(`C-section rate` = "rate"),
                 discretize = "quantile", n_breaks = 4)
 ```
@@ -30,7 +31,13 @@ map_dept_static(df, zcol = c(`C-section rate` = "rate"),
 
 - Codes can be character or numeric: `5`, `"5"` and `"05"` all match
   Antioquia. A national-total row (`"00"`) is ignored.
-- `discretize`: `"none"`, `"jenks"`, `"quantile"` or `"equal"`.
+- San Andrés and Providencia are moved and enlarged next to the mainland
+  (`inset = TRUE`, the default in both), so their colour is visible at country
+  scale. On the interactive map they then sit over the sea of the basemap;
+  `inset = FALSE` gives the real geometry.
+- `discretize`: `"pretty"` (round numbers; default for `map_dept()`),
+  `"jenks"`, `"quantile"`, `"equal"` or `"none"` (continuous; default for
+  `map_dept_static()`).
 - `tooltip` (interactive): `"auto"` or a glue template on the joined data,
   e.g. `"{dept_nom}: {scales::percent(rate)}"`.
 - `map_dept_static()` returns a `ggplot`, so you can keep adding to it.
@@ -48,9 +55,8 @@ after that:
    CC BY 4.0). It has names only; atlasr adds the DIVIPOLA codes from a small
    internal lookup table (`data-raw/gb_codes.R`).
 
-`atlas_geom(inset = TRUE)` moves and enlarges San Andrés and Providencia next
-to the Caribbean coast (static maps only; the islands' coordinates are no
-longer real). `atlas_cache_clear()` forces a fresh download.
+`atlas_geom(inset = TRUE)` returns the geometries with San Andrés and
+Providencia moved and enlarged next to the Caribbean coast. `atlas_cache_clear()` forces a fresh download.
 
 ## History
 
