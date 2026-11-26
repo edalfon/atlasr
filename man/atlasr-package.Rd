@@ -4,12 +4,13 @@
 \name{atlasr-package}
 \alias{atlasr}
 \alias{atlasr-package}
-\title{atlasr: quick maps of Colombia by department or municipality}
+\title{atlasr: quick maps of Colombia by department, province or municipality}
 \description{
 Map a data frame with DIVIPOLA codes without handling geometries:
-\code{\link[=map_dept]{map_dept()}} and \code{\link[=map_muni]{map_muni()}} (interactive, mapview/leaflet), and
-\code{\link[=map_dept_static]{map_dept_static()}} and \code{\link[=map_muni_static]{map_muni_static()}} (ggplot2). The geometries come from \code{\link[=atlas_geom]{atlas_geom()}}, which downloads them on
-first use and caches them locally.
+\code{\link[=map_dept]{map_dept()}}, \code{\link[=map_prov]{map_prov()}} and \code{\link[=map_muni]{map_muni()}} (interactive,
+mapview/leaflet), and \code{\link[=map_dept_static]{map_dept_static()}}, \code{\link[=map_prov_static]{map_prov_static()}} and
+\code{\link[=map_muni_static]{map_muni_static()}} (ggplot2). The geometries come from \code{\link[=atlas_geom]{atlas_geom()}},
+which downloads them on first use and caches them locally.
 }
 \details{
 atlasr started in 2018 as an internal package for the atlas project.

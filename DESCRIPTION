@@ -1,5 +1,5 @@
 Package: atlasr
-Title: Quick Maps of Colombia by Department or Municipality
+Title: Quick Maps of Colombia by Department, Province or Municipality
 Version: 0.1.0.9000
 Authors@R:
     person(given = "Eduardo",
@@ -7,11 +7,11 @@ Authors@R:
            role = c("aut", "cre", "cph"),
            email = "edalfon@gmail.com",
            comment = c(ORCID = "0000-0001-6430-5135"))
-Description: Draw choropleth maps of Colombian departments or
+Description: Draw choropleth maps of Colombian departments, provinces or
     municipalities from a data frame with DIVIPOLA codes, without handling
-    geometries. Interactive maps use
-    'mapview' (leaflet); static maps use 'ggplot2', with San Andres and
-    Providencia moved and enlarged next to the mainland. Geometries are not
+    geometries. Interactive maps use 'mapview' (leaflet) and static maps use
+    'ggplot2', both with San Andres and Providencia moved and enlarged next
+    to the mainland. Geometries are not
     shipped with the package: they are downloaded on first use from
     'ColOpenData' (DANE MGN 2018) or, as a fallback, from geoBoundaries
     (CC BY 4.0), and cached locally.

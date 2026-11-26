@@ -1,6 +1,6 @@
 # atlasr
 
-Quick maps of Colombia by department or municipality, from a data frame with
+Quick maps of Colombia by department, province or municipality, from a data frame with
 DIVIPOLA codes, without handling geometries.
 
 ```r
@@ -29,6 +29,12 @@ map_dept_static(df, zcol = c(`C-section rate` = "rate"),
 # municipalities: same arguments, joined on muni_cod
 map_muni(muni_df, zcol = "rate")
 map_muni_static(muni_df, zcol = "rate", palette = "mako")
+
+# provinces: joined on prov_cod; atlas_provinces() says which municipalities
+# each province has, e.g. to add up municipal data
+muni_df$prov_cod <- atlas_provinces()$prov_cod[
+  match(muni_df$muni_cod, atlas_provinces()$muni_cod)]
+map_prov(aggregate(births ~ prov_cod, muni_df, sum), zcol = "births")
 ```
 
 ![Population by department, jenks breaks](man/figures/README-static.png)
@@ -37,10 +43,12 @@ map_muni_static(muni_df, zcol = "rate", palette = "mako")
 |---|---|---|
 | `map_dept()` | departments (`dept_cod`, 2 digits) | interactive (`mapview`) |
 | `map_dept_static()` | departments | static (`ggplot`) |
+| `map_prov()` | provinces (`prov_cod`, 4 characters) | interactive (`mapview`) |
+| `map_prov_static()` | provinces | static (`ggplot`) |
 | `map_muni()` | municipalities (`muni_cod`, 5 digits) | interactive (`mapview`) |
 | `map_muni_static()` | municipalities | static (`ggplot`) |
 
-- All four take the same arguments and bin the same way, so the same call
+- All six take the same arguments and bin the same way, so the same call
   gives the same classes and colours on either map.
 - Codes can be character or numeric: `5`, `"5"` and `"05"` all match
   Antioquia; `5001` and `"05001"` match Medellín. A national-total row
@@ -54,8 +62,9 @@ map_muni_static(muni_df, zcol = "rate", palette = "mako")
   number of classes.
 - `palette`: a viridis option (`"viridis"`, `"magma"`, `"mako"`, ...), colours
   to interpolate (`c("white", "darkred")`) or a function `n -> colours`.
-- Municipal maps draw department borders on top (`dept_borders = TRUE`), and
-  their tooltips name the department too ("Medellín (Antioquia)").
+- Municipal and provincial maps draw department borders on top
+  (`dept_borders = TRUE`), and their tooltips name the department too
+  ("Medellín (Antioquia)"), since names repeat.
 - `basemaps` (interactive): Esri's grey canvas and topographic map by default,
   which need no API key.
 - `tooltip` (interactive): `"auto"` or a glue template on the joined data,
@@ -83,6 +92,14 @@ Names come from DIVIPOLA whatever the source. Municipalities created after the
 source's boundaries have no polygon (Belén de Bajirá, 27086, in
 geoBoundaries). The internal lookup tables (codes, names and seat locations,
 no geometry) are built by `data-raw/sysdata.R`.
+
+Provinces are DANE's grouping of the municipalities of each department
+(Valle del Aburrá, Urabá, ...), from DIVIPOLA via
+[daner](https://github.com/edalfon/daner). `atlas_geom("prov")` merges the
+municipalities, so it needs no download of its own. DANE gives provinces no
+code, so atlasr makes one: the department code plus the province's position
+in the department, alphabetically (`"0501"` Bajo Cauca ... `"0509"` Valle del
+Aburrá); `atlas_provinces()` lists them with their municipalities.
 
 `atlas_geom(inset = TRUE)` returns the geometries with San Andrés and
 Providencia moved and enlarged next to the Caribbean coast.
