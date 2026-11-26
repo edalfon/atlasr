@@ -303,3 +303,57 @@ test_that("binning copes with no values or a single value", {
   expect_equal(as.character(one$class), c("3", "3", NA))
   expect_equal(one$colours, "col1")
 })
+
+test_that("provinces group every municipality, with codes in their department", {
+  prov <- atlas_provinces()
+  expect_equal(nrow(prov), nrow(divipola_muni))
+  expect_false(anyNA(prov$prov_cod))
+  expect_equal(substr(prov$prov_cod, 1, 2), prov$dept_cod)
+  # province names repeat across departments, codes don't
+  norte <- unique(prov[prov$prov_nom == "Norte", c("prov_cod", "dept_cod")])
+  expect_gt(nrow(norte), 1)
+  expect_false(anyDuplicated(norte$prov_cod) > 0)
+  expect_equal(prov$prov_nom[prov$muni_cod == "05001"], "Valle del Aburra")
+})
+
+test_that("province geometries merge municipalities, and map", {
+  withr::local_options(atlasr.cache_dir = withr::local_tempdir())
+  dir.create(atlas_cache_dir(), showWarnings = FALSE)
+  square <- function(x, y, d = 0.5) {
+    sf::st_multipolygon(list(list(rbind(
+      c(x, y), c(x + d, y), c(x + d, y + d), c(x, y + d), c(x, y)
+    ))))
+  }
+  # Medellin and Bello (Valle del Aburra), Turbo (Uraba), Barranquilla
+  geom <- with_names(
+    c("05001", "05088", "05837", "08001"),
+    sf::st_sfc(square(-76, 6), square(-75.5, 6), square(-77, 8),
+               square(-75, 10.5), crs = 4326),
+    "muni"
+  )
+  saveRDS(standardise_geom(geom, "geoboundaries", "muni"),
+          cache_path("muni", "geoboundaries"))
+
+  prov <- atlas_geom("prov")
+  lookup <- atlas_provinces()
+  # Uraba (0508), Valle del Aburra (0509), Barranquilla's province
+  codes <- lookup$prov_cod[match(c("05837", "05001", "08001"),
+                                 lookup$muni_cod)]
+  expect_equal(prov$prov_cod, codes)
+  expect_named(prov, c("prov_cod", "prov_nom", "dept_cod", "dept_nom",
+                       "geometry"))
+  expect_equal(attr(prov, "source"), "geoboundaries")
+  expect_true(file.exists(cache_path("prov", "geoboundaries")))
+  # Medellin + Bello: one polygon, twice the area of one square
+  areas <- as.numeric(sf::st_area(prov))
+  expect_equal(areas[2] / areas[1], 2, tolerance = 0.05)
+
+  df <- data.frame(prov_cod = codes, v = c(1, 5, 9))
+  p <- map_prov_static(df, "v")
+  expect_s3_class(p, "ggplot")
+  expect_length(p$layers, 2)
+  m <- map_prov(df, "v")
+  expect_s4_class(m, "mapview")
+  expect_equal(unit_label(sf::st_drop_geometry(prov), "prov")[2],
+               "Valle del Aburra (Antioquia)")
+})

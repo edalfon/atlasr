@@ -157,12 +157,80 @@ map_muni_static <- function(data,
   )
 }
 
+#' Map province data
+#'
+#' The provincial version of [map_dept()] and [map_dept_static()]: same
+#' arguments and behaviour, with `prov_cod` as the join variable. Provinces
+#' are DANE's grouping of the municipalities of each department (e.g. Valle
+#' del Aburra, Uraba); their codes are made up by atlasr, as DANE gives none:
+#' see [atlas_provinces()] for the codes and for which municipalities each
+#' province has (to add up municipal data by province). Department borders are
+#' drawn on top, and tooltips name the department too ("Norte (Antioquia)"),
+#' since province names repeat.
+#'
+#' @inheritParams map_muni
+#' @param join_var name of the column in `data` with the province code.
+#'
+#' @return `map_prov()`: a `mapview` object. `map_prov_static()`: a `ggplot`.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # add up municipal data by province
+#' muni <- data.frame(muni_cod = c("05001", "05088", "05045"), x = 1:3)
+#' muni$prov_cod <- atlas_provinces()$prov_cod[
+#'   match(muni$muni_cod, atlas_provinces()$muni_cod)]
+#' prov <- aggregate(x ~ prov_cod, muni, sum)
+#' map_prov(prov, zcol = "x")
+#' map_prov_static(prov, zcol = "x")
+#' }
+map_prov <- function(data,
+                     zcol,
+                     join_var = "prov_cod",
+                     discretize = c("pretty", "jenks", "quantile", "equal",
+                                    "none"),
+                     n_breaks = 5,
+                     palette = "viridis",
+                     inset = TRUE,
+                     tooltip = "auto",
+                     basemaps = c("Esri.WorldGrayCanvas", "Esri.WorldTopoMap"),
+                     dept_borders = TRUE,
+                     ...,
+                     source = "auto",
+                     refresh = FALSE) {
+  map_interactive(
+    "prov", data, zcol, join_var, match.arg(discretize), n_breaks, palette,
+    inset, tooltip, basemaps, ..., dept_borders = dept_borders,
+    source = source, refresh = refresh
+  )
+}
+
+#' @rdname map_prov
+#' @export
+map_prov_static <- function(data,
+                            zcol,
+                            join_var = "prov_cod",
+                            discretize = c("pretty", "jenks", "quantile",
+                                           "equal", "none"),
+                            n_breaks = 5,
+                            palette = "viridis",
+                            inset = TRUE,
+                            dept_borders = TRUE,
+                            source = "auto",
+                            refresh = FALSE) {
+  map_static(
+    "prov", data, zcol, join_var, match.arg(discretize), n_breaks, palette,
+    inset, dept_borders = dept_borders, source = source, refresh = refresh
+  )
+}
+
 # Internals shared by all levels ------------------------------------------
 
 # Line styles: municipalities need thinner lines than departments
 line_style <- function(level) {
   switch(level,
     dept = list(static = 0.15, interactive = 1),
+    prov = list(static = 0.1, interactive = 0.6),
     muni = list(static = 0.05, interactive = 0.3)
   )
 }
@@ -262,8 +330,8 @@ map_static <- function(level, data, zcol, join_var, discretize, n_breaks,
     ggplot2::theme_void()
 }
 
-# Department outlines, by merging the municipalities: they always match the
-# municipal polygons (same source, same inset). Kept in memory for the
+# Department outlines, by merging the municipalities (or provinces): they
+# always match the polygons below (same source, same inset). Kept in memory for the
 # session, since merging takes about a second.
 outline_cache <- new.env(parent = emptyenv())
 
@@ -273,14 +341,8 @@ dept_outline <- function(geom) {
   if (!is.null(outline_cache[[key]])) {
     return(outline_cache[[key]])
   }
-  crs <- sf::st_crs(geom)
-  local <- sf::st_transform(sf::st_geometry(geom), 3116)
-  parts <- split(local, geom$dept_cod)
-  merged <- do.call(c, lapply(parts, sf::st_union))
-  out <- sf::st_sf(
-    dept_cod = names(parts),
-    geometry = sf::st_transform(sf::st_sfc(merged, crs = 3116), crs)
-  )
+  out <- merge_units(geom, geom$dept_cod)
+  names(out)[names(out) == "code"] <- "dept_cod"
   outline_cache[[key]] <- out
   out
 }
