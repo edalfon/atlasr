@@ -6,3 +6,5 @@ docs
 .Ruserdata
 data-raw/polygons.html
 data-raw/ColombiaPolygons/
+vignettes/*.html
+inst/doc

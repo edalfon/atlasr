@@ -39,6 +39,10 @@ map_prov(aggregate(births ~ prov_cod, muni_df, sum), zcol = "births")
 
 ![Population by department, jenks breaks](man/figures/README-static.png)
 
+`vignette("atlasr")` walks through all three levels with census data
+(install with `remotes::install_github("edalfon/atlasr", build_vignettes =
+TRUE)` to get it).
+
 | function | level | output |
 |---|---|---|
 | `map_dept()` | departments (`dept_cod`, 2 digits) | interactive (`mapview`) |

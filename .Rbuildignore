@@ -7,3 +7,5 @@
 ^LICENSE\.md$
 data-raw
 ^data-raw$
+^vignettes/atlasr\.Rmd\.orig$
+^vignettes/precompile\.R$

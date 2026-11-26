@@ -38,11 +38,14 @@ Imports:
     viridisLite
 Suggests:
     daner,
+    knitr,
+    rmarkdown,
     spelling,
     testthat (>= 3.0.0),
     usethis,
     withr
 Remotes:
     edalfon/daner
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0
